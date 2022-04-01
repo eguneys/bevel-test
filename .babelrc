@@ -1,0 +1,12 @@
+{
+  "plugins": [
+    "tsconfig-paths"
+  ],
+  "presets": [
+    "@babel/typescript"
+  ],
+  "env": {
+    "development": {
+    }
+  }
+}

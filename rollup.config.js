@@ -1,14 +1,19 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve'
+import commonjs from '@rollup/plugin-commonjs'
 const htmlTemplate = require('rollup-plugin-generate-html-template')
-const typescript = require('@rollup/plugin-typescript')
 
+import babel from '@rollup/plugin-babel'
+
+const { string } = require('rollup-plugin-string')
 const image = require('@rollup/plugin-image')
+const copy = require('rollup-plugin-copy')
 
 const serve = require('rollup-plugin-serve')
 const livereload = require('rollup-plugin-livereload')
 
 const { terser } = require('rollup-plugin-terser')
 
+let extensions = ['.ts', '.js']
 export default args => {
   let prod = args['config-prod']
   return {
@@ -25,16 +30,23 @@ export default args => {
       })
     },
     watch: {
-      clearScreen: false
+      clearScreen: true
     },
     plugins: [
-      nodeResolve(),
-      typescript(),
+      nodeResolve({ extensions, preferBuiltins: false }),
+      commonjs(),
+      string({
+        include: '**/*.frag'
+      }),
+      babel({ extensions, babelHelpers: 'bundled' }),
+      image(),
+      copy({
+        targets: [ { src: 'assets', dest: 'dist' }]
+      }),
       htmlTemplate({
         template: 'src/index.html',
         target: 'index.html'
       }),
-      image(),
       ...(prod ? [] : [
         serve({ contentBase: 'dist', port: 3000 }),
         livereload({ watch: 'dist', port: 8080 })

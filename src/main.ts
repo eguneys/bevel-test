@@ -1,8 +1,16 @@
-import Iksir, { Play, Quad } from 'iksir'
 import sprites_png from '../assets/sprites.png'
 
 import Input from './input'
 import { ticks } from './shared'
+import { Assets, AssetMap } from './assets'
+import { BevelFilter } from './filters'
+
+import { 
+  PixiApp, 
+  PixiContainer,
+  Application, 
+  Container, 
+  Sprite } from './pixi'
 
 function load_image(path: string): Promise<HTMLImageElement> {
   return new Promise(resolve => {
@@ -14,14 +22,14 @@ function load_image(path: string): Promise<HTMLImageElement> {
 
 
 type Context = {
-	play: Play,
+  app: PixiApp,
   input: Input,
-	image: HTMLImageElement
+  assets: AssetMap
 }
 
 abstract class IMetro {
-  get play(): Play { return this.ctx.play }
-	get a(): HTMLImageElement { return this.ctx.image }
+  get app(): PixiApp { return this.ctx.app }
+	get a(): AssetMap { return this.ctx.assets }
 
 	constructor(readonly ctx: Context) {}
 
@@ -45,50 +53,60 @@ abstract class IMetro {
 
 class AllMetro extends IMetro {
 
+  container!: PixiContainer
 
-  _init() {
+  data!: any
+
+  filter!: BevelFilter
+
+  _set_data(data: any) {
+    this.data = data
+    return this
   }
 
-  _update(dt: number, dt0: number) {}
+  _init() {
+    this.container = Container()
+
+    let res = Sprite(this.a['splash'].texture, 200, 200, 2)
+    res.filters = [this.filter = new BevelFilter(this.data)]
+    this.container.addChild(res)
+  }
+
+  _update(dt: number, dt0: number) {
+  
+    this.filter.uniforms.lightPos[0] = this.data.lightPos.x
+    this.filter.uniforms.lightPos[1] = this.data.lightPos.y
+    this.filter.uniforms.lightPos[2] = this.data.lightPos.z
+
+    this.filter.uniforms.vertZ = this.data.vPos
+
+    this.filter.uniforms.shininessVal = this.data.shininess
+  }
 
   _draw() {
   }
 
 }
 
-export default function app(element: HTMLElement) {
+export default function app(element: HTMLElement, props: any) {
 
-  /*
-  let context = new AudioContext()
-  console.log(context.sampleRate, context.destination.channelCount)
-
-  let now = context.currentTime
-  let kick = new Kick(context)
-
-  kick.a(now)
-  kick.a(now + 0.5)
-  kick.a(now + 1)
-
-
-  let snare = new Snare(context)
-  snare.a(now)
-  snare.a(now + 1)
-   */
-
+  let app = Application(element)
+  element.appendChild(app.view)
   let input: Input = new Input()
-  let play = Iksir(element)
 
-  load_image(sprites_png).then((image: HTMLImageElement) => {
+  app.ticker.autoStart = false
 
-    play.glOnce(image)
+  Assets().then(assets => {
 
     let ctx: Context = {
-      play,
+      app,
       input,
-      image
+      assets
     }
 
-    let metro = new AllMetro(ctx).init()
+    let metro = new AllMetro(ctx)._set_data(props).init()
+
+    app.stage.addChild(metro.container)
 
     let fixed_dt = 1000/60
     let timestamp0: number | undefined,
@@ -118,95 +136,10 @@ export default function app(element: HTMLElement) {
       }
 
     metro.draw()
-    play.flush()
     dt0 = dt 
     requestAnimationFrame(step)
     }
     requestAnimationFrame(step)
   })
-}
-
-function draw(analyser: AnalyserNode) {
-  let data = new Uint8Array(analyser.frequencyBinCount)
-
-  analyser.getByteTimeDomainData(data)
-
-
-
-}
-
-class WithContext {
-  constructor(readonly context: AudioContext) {}
-}
-
-class Snare extends WithContext {
-
-
-  analyser!: AnalyserNode
-
-  _noise!: AudioBuffer
-
-  get noise(): AudioBuffer {
-    if (!this._noise) {
-      let bufferSize = this.context.sampleRate
-      let buffer = this.context.createBuffer(1, bufferSize, this.context.sampleRate)
-      let output = buffer.getChannelData(0)
-
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = Math.random() * 2 - 1
-      }
-      this._noise = buffer
-    }
-    return this._noise
-  }
-
-  a(time: number) {
-    let { context } = this
-
-    let noise = this.context.createBufferSource()
-    noise.buffer = this.noise
-
-    let filter = this.context.createBiquadFilter()
-    filter.type = 'highpass'
-    filter.frequency.setValueAtTime(time, 1000)
-    noise.connect(filter)
-
-    let envelope = this.context.createGain()
-    filter.connect(envelope)
-
-    //envelope.connect(this.context.destination)
-
-    this.analyser = this.context.createAnalyser()
-    envelope.connect(this.analyser)
-    this.analyser.connect(this.context.destination)
-
-
-    envelope.gain.setValueAtTime(1, time)
-    envelope.gain.exponentialRampToValueAtTime(0.01, time + 0.2)
-    noise.start(time)
-
-    noise.stop(time + 0.2)
-  }
-}
-
-class Kick extends WithContext {
-
-  a(time: number) {
-    let { context } = this
-
-    let oscillator = context.createOscillator()
-    let gain = context.createGain()
-
-    oscillator.connect(gain)
-    gain.connect(context.destination)
-
-    oscillator.frequency.setValueAtTime(150, time)
-    gain.gain.setValueAtTime(1, time)
-
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.5)
-    oscillator.start(time)
-    oscillator.stop(time + 0.5)
-  }
-
 }
 

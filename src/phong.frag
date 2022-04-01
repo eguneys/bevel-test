@@ -7,8 +7,10 @@ uniform vec4 filterArea;
 //uniform float transformX;
 //uniform float transformY;
 
-const float transformX = 10.0;
-const float transformY = 10.0;
+const float transformX = 20.0;
+const float transformY = 20.0;
+
+const float divisions = 100.0;
 
 bool isalpha(vec2 uv, vec2 offset) {
   vec4 color = texture2D(uSampler, uv - offset);
@@ -20,12 +22,12 @@ float getdistancetoedge(vec2 uv) {
   float mindistance = 1.0;
   vec2 dir = vec2(1.0 / filterArea) * vec2(transformX, transformY);
 
-  for (int i=0; i <= 20; i++) {
-    vec2 vdist = dir * 0.05 * float(i);
+  for (int i=0; i <= int(divisions); i++) {
+    vec2 vdist = dir * float(i) / divisions;
     bool alpha = isalpha(uv, vdist);
 
     if (alpha) {
-      mindistance = min(float(i) * 0.05, mindistance);
+      mindistance = min(float(i)/divisions, mindistance);
     }
   }
   return mindistance;

@@ -34,18 +34,18 @@ body {
 
       document.addEventListener('DOMContentLoaded', () => {
         let props = {
-          lightPos: { x: -1, y: -2, z: 1},
-          vPos: 1,
-          shininess:28.0 
+          lightPos: { x: -100, y: 70, z: 90},
+          vPos: 0,
+          shininess:40.0 
         }
         Space(document.getElementById('app'), props)
 
 
         let gui = new dat.GUI();
-        gui.add(props.lightPos, 'x', -10, 10.0, 1)
-        gui.add(props.lightPos, 'y', -10, 10.0, 1)
-        gui.add(props.lightPos, 'z', -10, 10.0, 1)
-        gui.add(props, 'vPos', -10, 10.0, 1)
+        gui.add(props.lightPos, 'x', -100, 100.0, 5)
+        gui.add(props.lightPos, 'y', -100, 100.0, 5)
+        gui.add(props.lightPos, 'z', -100, 100.0, 5)
+        gui.add(props, 'vPos', -100, 100.0, 5)
         gui.add(props, 'shininess', 1, 40, 4)
       })
     </script>

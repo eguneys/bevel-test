@@ -70,6 +70,11 @@ class AllMetro extends IMetro {
     let res = Sprite(this.a['splash'].texture, 200, 200, 2)
     res.filters = [this.filter = new BevelFilter(this.data)]
     this.container.addChild(res)
+
+
+    let r2 = Sprite(this.a['splash'].texture, 300, 300, 2)
+    r2.filters = [this.filter]
+    this.container.addChild(r2)
   }
 
   _update(dt: number, dt0: number) {
